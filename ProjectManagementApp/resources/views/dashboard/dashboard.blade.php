@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="{{ url('/css/adminlte.min.css') }}">
   <link rel="stylesheet" href="{{ url('/css/newcss.css') }}">
   <link rel="stylesheet" type="text/css" href="{{ url('/css/style.css') }}" />
+      <!-- Scripts -->
+      @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 
 <body class="hold-transition">
@@ -36,9 +38,9 @@
             <i class="fas fa-search"></i>
           </a>
           <div class="navbar-search-block">
-            <form class="form-inline">
+            <form class="form-inline" method="POST" action="{{route('projects/searchProject')}}">
               <div class="input-group input-group-sm">
-                <input class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search">
+                <input class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search" name="search" id="search">
                 <div class="input-group-append">
                   <button class="btn btn-navbar" type="submit">
                     <i class="fas fa-search"></i>
@@ -50,6 +52,20 @@
               </div>
             </form>
           </div>
+        </li>
+        <li class="nav-item dropdown">
+            <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                {{ Auth::user()->name }}
+            </a>
+
+            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+              <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();document.getElementById('logout-form').submit();">
+                {{ __('Logout') }}
+              </a>
+              <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                  @csrf
+              </form>
+            </div>
         </li>
       </ul>
     </nav>
@@ -113,15 +129,16 @@
                             <div class="col-12">
                                 <div>
                                     <br></br>
-                                    <form action="{{route('actionregister')}}" method="post" onsubmit="return validatePasswords()">
+                                    <form action="{{route('projects/storeTask')}}" method="post" onsubmit="return validatePasswords()">
+                                    {{ csrf_field() }}
                                         <div class="form-group">
-                                            <input placeholder="Title" type="text" id="title" name="Title">
+                                            <input placeholder="Title" type="text" id="taskTitle" name="taskTitle">
                                         </div>
                                         <div class="form-group">
-                                            <input placeholder="Content" type="text" id="content" name="Title">
+                                            <input placeholder="Content" type="text" id="taskDesc" name="taskDesc">
                                         </div>
                                         <div class="form-group">
-                                            <select id="status">
+                                            <select id="taskStatus" name="taskStatus">
                                                 @foreach($status as $data)
                                                 <option value="{{$data->id}}">
                                                 {{$data->name}}
@@ -130,7 +147,7 @@
                                             </select>
                                         </div>
                                         <div class="form-group">
-                                            <select id="project">
+                                            <select id="taskProject" name="taskProject">
                                                 @foreach($projects as $data)
                                                 <option value="{{$data->id}}">
                                                 {{$data->name}}
@@ -139,7 +156,7 @@
                                             </select>
                                         </div>
                                         <div class="form-group">
-                                            <select id="project">
+                                            <select id="taskUser" name="taskUser">
                                                 @foreach($users as $data)
                                                 <option value="{{$data->id}}">
                                                 {{$data->name}}
@@ -148,15 +165,12 @@
                                             </select>
                                         </div>
                                         <br></br>
+                                        <button type="submit" class="btn btn-primary">Save changes</button>
                                     </form>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary">Save changes</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
                 </div>
             </div>
@@ -166,7 +180,7 @@
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="card-title">Add New Task</h5>
+                    <h5 class="card-title">Add New Project</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                     </button>
@@ -177,15 +191,27 @@
                             <div class="col-12">
                                 <div>
                                     <br></br>
-                                    <form action="{{ route('addProject') }}" method="post">
+                                    <form action="{{ route('projects/storeProject') }}" method="POST" id="modal-details">
+                                    {{ csrf_field() }}
                                         <div class="form-group">
                                             <input placeholder="Project Title" type="text" id="projectTitle" name="projectTitle">
                                         </div>
                                         <div class="form-group">
                                             <input placeholder="Project Description" type="text" id="projectDesc" name="projectDesc">
                                         </div>
+                                        <div class="form-group">
+                                            <select id="projectStatus" name="projectStatus">
+                                                @foreach($status as $data)
+                                                <option value="{{$data->id}}">
+                                                {{$data->name}}
+                                                </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                         <br></br>
-                                        <button type="button" class="btn btn-primary" type="submit"  data-dismiss="modal">Save Project</button>
+                                        <div class="form-group">
+                                              <button class="btn btn-primary" type="submit" form="modal-details" >Save Project</button>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
@@ -205,16 +231,16 @@
                 <div class="card-body background-grey">
                   <div class='project-column'>
                     <div class='project-column-heading'>
-                      <h2 class='project-column-heading__title'>Backlog </h2><button
+                      <h2 class='project-column-heading__title'>Backlog</h2><button
                         class='project-column-heading__options'><i class="fas fa-ellipsis-h"></i></button>
                     </div>
                     @foreach($tasksToDo as $data)
                     <div class='task' draggable='true'>
-                      <div class='task__tags'><span class='task__tag task__tag--copyright'>$data->ProjectName</span><button
+                      <div class='task__tags'><span class='task__tag task__tag--copyright'>{{$data->ProjectName}}</span><button
                           class='task__options'><i class="fas fa-ellipsis-h"></i></button></div>
-                      <p>$data->TaskName</p>
+                      <p>{{$data->TaskName}}</p>
                       <div class='task__stats'>
-                        <span><time datetime="2021-11-24T20:00:00"><i class="fas fa-flag"></i>Nov 24</time></span>
+                        <span><time datetime="2021-11-24T20:00:00"><i class="fas fa-flag"></i> {{$data->UserName}}</time></span>
                         <span><i class="fas fa-comment"></i>3</span>
                         <span><i class="fas fa-paperclip"></i>7</span>
                         <span class='task__owner'></span>

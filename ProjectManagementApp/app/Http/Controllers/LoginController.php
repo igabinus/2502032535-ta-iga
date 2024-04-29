@@ -7,10 +7,13 @@ use Session;
 
 class LoginController extends Controller
 {
+
+    use AuthenticatesUsers;
+    
     public function login()
     {
         if (Auth::check()) {
-            return redirect('home');
+            return redirect('dashboard/dashboard');
         }else{
             return view('authentication/login');
         }
@@ -25,7 +28,7 @@ class LoginController extends Controller
 
         if (Auth::Attempt($data)) {
             Session::flash('berhasil login', 'Email atau Password benar');
-            return redirect('home');
+            return redirect('dashboard/dashboard');
         }else{
             Session::flash('error', 'Email atau Password Salah');
             return redirect('/');
